@@ -6,6 +6,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  refreshToken?: string;
   createdAt: Date;
   updatedAt: Date;
   isPasswordCorrect(password: string): Promise<boolean>;
@@ -31,10 +32,14 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select:false
+      select: false,
+    },
+    refreshToken: {
+      type: String,
+      select: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // ---------- Hash password before saving ----------
