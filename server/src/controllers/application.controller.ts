@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Application from "../models/application.model.js";
+import mongoose from "mongoose";
 
 
 // @desc    Create a new job application
@@ -172,7 +173,7 @@ export const deleteApplication = asyncHandler(async(req:Request, res:Response):P
 // @route   GET /api/v1/applications/stats
 export const getStats = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const stats = await Application.aggregate([
-    { $match: { user: req.user!._id } },
+    { $match: { user: new mongoose.Types.ObjectId(req.user!._id) } },
     {
       $group: {
         _id: "$status",

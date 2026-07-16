@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import jwt ,{JwtPayload} from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -85,12 +86,17 @@ export const loginUser = asyncHandler(
 
 // @route   POST /api/v1/auth/logout
 export const logoutUser = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
+    await User.findByIdAndUpdate(req.user!._id, {
+      $unset: { refreshToken: 1 },
+    });
+
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
+
     res.status(200).json(new ApiResponse(200, null, "Logout successful"));
   },
 );
@@ -102,3 +108,34 @@ export const getCurrentUser = asyncHandler(
     res.status(200).json(new ApiResponse(200, { user: req.user }, "User fetched successfully"));
   },
 );
+
+interface TokenPayload extends JwtPayload {
+  _id: string;
+}
+
+// @route   GET /api/v1/auth/refresh
+
+export const refreshAccessToken = asyncHandler(
+  async (req:Request, res:Response, next:NextFunction):Promise<void> => {
+    const refreshToken = req.cookies?.refreshToken;
+    if( !refreshToken){
+      throw new ApiError(401, "Unauthorized - No refresh token provided"); 
+    }
+
+    let decodedToken: TokenPayload;
+    try {
+      decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as TokenPayload;
+    } catch (error) {
+      throw new ApiError(401, "Invalid refresh token");
+    }
+
+    const user = await User.findById(decodedToken._id).select("+refreshToken");
+    if(!user || user.refreshToken !== refreshToken){
+      throw new ApiError(401, "Invalid refresh token");
+    }
+
+    const {accessToken} = await generateAccessAndRefreshTokens(user,res);
+
+    res.status(200).json(new ApiResponse(200, { accessToken }, "Access token refreshed successfully"));
+  }
+)
