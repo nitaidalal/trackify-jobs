@@ -21,7 +21,7 @@ const generateAccessAndRefreshTokens = async (
 
   res.cookie("refreshToken", refreshToken, {
     ...cookieOptions,
-    maxAge: process.env.REFRESH_TOKEN_EXPIRY as any,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   return { accessToken, refreshToken };
