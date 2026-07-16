@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import { notFound } from "./middlewares/notFound.middleware.js";
+import authRoutes from "./routes/auth.routes.js";
+import applicationRoutes from "./routes/application.routes.js";
 
 const app: Application = express();
 
@@ -22,16 +24,19 @@ app.use(cookieParser());
 
 // ---------- Logging ----------
 if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev")); // logs each request: method, url, status, response time
+  app.use(morgan("dev")); 
 }
 
 // ---------- Routes (placeholder, we'll add real ones soon) ----------
-app.get("/api/v1/health", (req, res) => {
+app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({ success: true, message: "Server is healthy" });
 });
 
-// ---------- Error handling (must be last) ----------
-app.use(notFound); // catches unmatched routes → 404
-app.use(errorHandler); // catches all thrown/forwarded errors → formatted response
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/applications", applicationRoutes);
+
+// ---------- Error handling ----------
+app.use(notFound); 
+app.use(errorHandler);
 
 export default app;
